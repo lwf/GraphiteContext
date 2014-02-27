@@ -31,6 +31,7 @@ import org.apache.hadoop.metrics.spi.OutputRecord;
 
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.InetSocketAddress;
 
 /**
  * Metrics context for writing metrics to Graphite.<p/>
@@ -101,13 +102,15 @@ public class GraphiteContext extends AbstractMetricsContext {
   }
 
   protected void emitMetric(String metric) throws IOException {
-      Socket socket = new Socket(serverName, port);
-      try { 
+      Socket socket = new Socket();
+      try {
+          socket.connect(new InetSocketAddress(serverName, port), 2000);
+          socket.setSoTimeout(4000);
           Writer writer = new OutputStreamWriter(socket.getOutputStream());
           writer.write(metric);
           writer.flush();
           writer.close();
-      } finally { 
+      } finally {
           socket.close();
       }
   }
