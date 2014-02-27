@@ -67,7 +67,7 @@ public class GraphiteContext extends AbstractMetricsContext {
 
     pathName = getAttribute(PATH);
     if (pathName == null) {
-        pathName = "Platform.Hadoop";
+        pathName = "hadoop";
     }
         
     parseAndSetPeriod(PERIOD_PROPERTY);
@@ -78,23 +78,25 @@ public class GraphiteContext extends AbstractMetricsContext {
    * Emits a metrics record to Graphite.
    */
   public void emitRecord(String contextName, String recordName, OutputRecord outRec) throws IOException {
-    StringBuilder sb = new StringBuilder();
     String hostname = outRec.getTag("hostName").toString(); // Only want to send first part of hostname.  
-    String split[] = hostname.split("[.]");
-    String metric = pathName + "." + contextName + "." + split[0] + "."; // Need to make the first part configurable
+    String split[] = hostname.split("\\.");
     long tm = System.currentTimeMillis() / 1000; // Graphite doesn't handle milliseconds
     for (String metricName : outRec.getMetricNames()) {
-        sb.append(metric);
-        sb.append(metricName);
-        String separator = " ";
-        sb.append(separator);
-        sb.append(outRec.getMetric(metricName));
-        sb.append(separator);
-        sb.append(tm);
-        sb.append("\n");
-        emitMetric(sb.toString()); 
-        sb = null; 
-        sb = new StringBuilder();
+      StringBuilder sb = new StringBuilder();
+      sb.append(pathName + "." + contextName + ".");
+      if (contextName.equals("jvm") && outRec.getTag("processName") != null) {
+        sb.append(outRec.getTag("processName") + ".");
+      }
+      sb.append(split[0] + "." + metricName);
+      String separator = " ";
+      sb.append(separator);
+      sb.append(outRec.getMetric(metricName));
+      sb.append(separator);
+      sb.append(tm);
+      sb.append("\n");
+      emitMetric(sb.toString()); 
+      sb = null; 
+      sb = new StringBuilder();
     }
   }
 
